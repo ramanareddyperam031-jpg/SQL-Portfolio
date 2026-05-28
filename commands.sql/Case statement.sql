@@ -7,3 +7,9 @@ CASE   WHEN fees >=90000 THEN 'high fees'
 END AS range
 FROM  student
 ORDER BY 2 ASC;
+
+Use of case statement in real_life scenario 
+--categorize&Label data
+--conditional aggregation
+--percentage calculation
+
