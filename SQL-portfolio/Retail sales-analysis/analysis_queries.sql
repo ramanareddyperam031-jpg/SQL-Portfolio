@@ -279,4 +279,3 @@ WHERE total_amount > previous_sale;
 SELECT customer_id,sale_date,total_amount,
 SUM(total_amount) OVER(PARTITION BY customer_id ORDER BY sale_date) AS cumulative_revenue
 FROM sales;
-
