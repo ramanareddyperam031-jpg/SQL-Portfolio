@@ -173,3 +173,110 @@ GROUP BY customer_id)
 SELECT *
 FROM customer_purchases
 WHERE purchase_count > 1;
+
+--Calculate total running quantity sold.
+WITH running AS (
+SELECT sale_id,sale_date,
+SUM(quantity) OVER (ORDER BY sale_date )as total_quantity
+FROM sales
+)
+
+SELECT *
+FROM running;
+
+--Calculate running total revenue.
+WITH running AS (
+SELECT sale_id,sale_date,
+SUM(total_amount) OVER (ORDER BY sale_date )as total_revenue
+FROM sales
+)
+
+SELECT *
+FROM running;
+
+--Find products ranked by revenue using as CTE.
+WITH product_revenue AS 
+(SELECT product_id,
+ SUM(total_amount) AS revenue
+ from sales
+ GROUP BY product_id
+)
+
+SELECT product_id,revenue,
+RANK() OVER (ORDER BY revenue ) as product_rank
+FROM product_revenue;
+
+--Interview-Level CTE + Window Function Questions.
+--Find the top 3 sales amounts.--used RANK()
+WITH ranked_sales AS (
+    SELECT sale_id,total_amount,
+    RANK() OVER (ORDER BY total_amount DESC) AS rnk
+    FROM sales
+)
+SELECT *
+FROM ranked_sales
+WHERE rnk <= 3;
+
+--Find the second highest sale amount.
+WITH ranked_sales AS 
+(SELECT sale_id,total_amount,
+ DENSE_RANK() OVER (ORDER BY  total_amount  DESC ) AS rnk
+ FROM sales 
+)
+
+SELECT *
+FROM ranked_sales 
+WHERE rnk = 2;
+
+--Rank customers by total spending.
+SELECT customer_id,
+       SUM(total_amount) AS total_spending,
+       RANK() OVER (ORDER BY SUM(total_amount) DESC
+       ) AS customer_rank
+FROM sales
+GROUP BY customer_id;
+
+--Rank products by quantity sold.
+SELECT customer_id,
+       SUM(quantity) AS quantity_sold,
+       RANK() OVER (ORDER BY SUM(quantity) DESC
+       ) AS quantity_rank
+FROM sales
+GROUP BY customer_id;
+
+--Find the customer with the highest cumulative spending.
+WITH customer_spending AS (
+SELECT customer_id,
+SUM(total_amount) AS total_spending
+FROM sales
+GROUP BY customer_id    
+)
+
+SELECT customer_id,total_spending
+FROM customer_spending
+ORDER BY total_spending DESC
+LIMIT 1
+
+
+--Find revenue growth between consecutive sales using LAG().
+SELECT sale_id,
+       sale_date,
+       total_amount,LAG(total_amount) OVER( ORDER BY sale_date) AS previous_sale,
+       total_amount -LAG(total_amount) OVER( ORDER BY sale_date) AS revenue_growth
+FROM sales;
+
+--Find customers whose revenue increased compared to their previous sale.
+WITH customer_sales AS (
+SELECT customer_id,sale_date,total_amount,
+LAG(total_amount) OVER(PARTITION BY customer_id ORDER BY sale_date) AS previous_sale
+FROM sales
+)
+SELECT *
+FROM customer_sales
+WHERE total_amount > previous_sale;
+
+--Calculate cumulative revenue for each customer.
+SELECT customer_id,sale_date,total_amount,
+SUM(total_amount) OVER(PARTITION BY customer_id ORDER BY sale_date) AS cumulative_revenue
+FROM sales;
+
